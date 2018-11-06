@@ -1,23 +1,35 @@
 {
-	"groups":[
-	{
-		"keys":"bg_jpg,egret_icon_png,description_json",
-		"name":"preload"
-	}],
-	"resources":[
-	{
-		"name":"bg_jpg",
-		"type":"image",
-		"url":"assets/bg.jpg"
-	},
-	{
-		"name":"egret_icon_png",
-		"type":"image",
-		"url":"assets/egret_icon.png"
-	},
-	{
-		"name":"description_json",
-		"type":"json",
-		"url":"config/description.json"
-	}]
+	"groups": [
+		{
+			"keys": "description_json,die_mp3,point_mp3,xiaozhang_png,regou_png",
+			"name": "preload"
+		}
+	],
+	"resources": [
+		{
+			"url": "config/description.json",
+			"type": "json",
+			"name": "description_json"
+		},
+		{
+			"name": "die_mp3",
+			"type": "sound",
+			"url": "assets/die.mp3"
+		},
+		{
+			"name": "point_mp3",
+			"type": "sound",
+			"url": "assets/point.mp3"
+		},
+		{
+			"name": "xiaozhang_png",
+			"type": "image",
+			"url": "assets/xiaozhang.png"
+		},
+		{
+			"name": "regou_png",
+			"type": "image",
+			"url": "assets/regou.png"
+		}
+	]
 }

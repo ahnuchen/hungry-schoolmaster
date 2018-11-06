@@ -29,11 +29,20 @@
 
 class Main extends egret.DisplayObjectContainer {
 
-
+    private deltaTime: number;
+    private timeOnEnterFrame: number = 0;
+    private voiceBonus: egret.Sound;
+    private voiceOver: egret.Sound;
+    private schoolMaster: SchoolMaster;
+    private hotDog: egret.Bitmap;
+    private hotDogXMin: number;
+    private hotDogXMax: number;
+    public hotDogYMax: number;//热狗的最大Y轴坐标
 
     public constructor() {
         super();
         this.addEventListener(egret.Event.ADDED_TO_STAGE, this.onAddToStage, this);
+        this.addEventListener(egret.Event.ENTER_FRAME, this.onTick, this);
     }
 
     private onAddToStage(event: egret.Event) {
@@ -58,19 +67,30 @@ class Main extends egret.DisplayObjectContainer {
             console.log(e);
         })
 
-
-
     }
 
     private async runGame() {
+        console.log('runGame')
         await this.loadResource()
         this.createGameScene();
-        const result = await RES.getResAsync("description_json")
-        this.startAnimation(result);
-        await platform.login();
-        const userInfo = await platform.getUserInfo();
-        console.log(userInfo);
+    }
 
+    private onTouchState() {
+        // if (this.schoolMaster.paused) {
+        //     this.schoolMaster.resume()
+        // } else {
+        //     this.schoolMaster.pause()
+        // }
+        // this.voiceOver.play(0, 1)
+        let hotDogTw = egret.Tween.get(this.hotDog, {loop: false});
+        hotDogTw.to({y: 0}, 1500).call(() => {
+            console.log('到头了');
+            egret.Tween.removeTweens(this.hotDog)
+            this.hotDog.x = this.getHotDogX();
+            this.hotDog.y = this.hotDogYMax;
+            this.voiceBonus.play(0, 1);
+        });
+        this.voiceOver.play(0, 1)
     }
 
     private async loadResource() {
@@ -80,70 +100,48 @@ class Main extends egret.DisplayObjectContainer {
             await RES.loadConfig("resource/default.res.json", "resource/");
             await RES.loadGroup("preload", 0, loadingView);
             this.stage.removeChild(loadingView);
+            this.voiceBonus = RES.getRes("point_mp3");
+            this.voiceOver = RES.getRes("die_mp3");
         }
         catch (e) {
             console.error(e);
         }
     }
 
-    private textfield: egret.TextField;
 
     /**
      * 创建游戏场景
      * Create a game scene
      */
     private createGameScene() {
-        let sky = this.createBitmapByName("bg_jpg");
-        this.addChild(sky);
-        let stageW = this.stage.stageWidth;
-        let stageH = this.stage.stageHeight;
-        sky.width = stageW;
-        sky.height = stageH;
+        let shp: egret.Shape = new egret.Shape();
+        shp.graphics.beginFill(0xeceaec, 1);
+        shp.graphics.drawRect(0, 0, this.stage.stageWidth, this.stage.stageHeight);
+        shp.graphics.endFill();
+        shp.touchEnabled = true;
+        shp.addEventListener(egret.TouchEvent.TOUCH_TAP, this.onTouchState, this);
+        this.addChild(shp);
+        this.schoolMaster = new SchoolMaster();
+        this.addChild(this.schoolMaster);
 
-        let topMask = new egret.Shape();
-        topMask.graphics.beginFill(0x000000, 0.5);
-        topMask.graphics.drawRect(0, 0, stageW, 172);
-        topMask.graphics.endFill();
-        topMask.y = 33;
-        this.addChild(topMask);
+        this.hotDog = this.createBitmapByName('regou_png');
 
-        let icon = this.createBitmapByName("egret_icon_png");
-        this.addChild(icon);
-        icon.x = 26;
-        icon.y = 33;
+        this.hotDogXMin = this.schoolMaster.bottomPointX;
+        this.hotDogXMax = this.stage.stageWidth - this.schoolMaster.topPointX - this.hotDog.width;
+        this.hotDogYMax = this.stage.stageHeight - this.hotDog.height;
+        this.hotDog.x = this.getHotDogX();
+        this.hotDog.y = this.hotDogYMax;
+        console.log(this.hotDog);
+        console.log(this.hotDog.x);
+        console.log(this.hotDog.y);
+        this.addChild(this.hotDog);
 
-        let line = new egret.Shape();
-        line.graphics.lineStyle(2, 0xffffff);
-        line.graphics.moveTo(0, 0);
-        line.graphics.lineTo(0, 117);
-        line.graphics.endFill();
-        line.x = 172;
-        line.y = 61;
-        this.addChild(line);
+        this.swapChildren(this.hotDog, this.schoolMaster)
+    }
 
 
-        let colorLabel = new egret.TextField();
-        colorLabel.textColor = 0xffffff;
-        colorLabel.width = stageW - 172;
-        colorLabel.textAlign = "center";
-        colorLabel.text = "Hello Egret";
-        colorLabel.size = 24;
-        colorLabel.x = 172;
-        colorLabel.y = 80;
-        this.addChild(colorLabel);
-
-        let textfield = new egret.TextField();
-        this.addChild(textfield);
-        textfield.alpha = 0;
-        textfield.width = stageW - 172;
-        textfield.textAlign = egret.HorizontalAlign.CENTER;
-        textfield.size = 24;
-        textfield.textColor = 0xffffff;
-        textfield.x = 172;
-        textfield.y = 135;
-        this.textfield = textfield;
-
-
+    private getHotDogX(): number {
+        return (this.hotDogXMax - this.hotDogXMin) * Math.random() + this.hotDogXMin;
     }
 
     /**
@@ -152,38 +150,14 @@ class Main extends egret.DisplayObjectContainer {
      */
     private createBitmapByName(name: string) {
         let result = new egret.Bitmap();
-        let texture: egret.Texture = RES.getRes(name);
-        result.texture = texture;
+        result.texture = RES.getRes(name);
         return result;
     }
 
-    /**
-     * 描述文件加载成功，开始播放动画
-     * Description file loading is successful, start to play the animation
-     */
-    private startAnimation(result: string[]) {
-        let parser = new egret.HtmlTextParser();
-
-        let textflowArr = result.map(text => parser.parse(text));
-        let textfield = this.textfield;
-        let count = -1;
-        let change = () => {
-            count++;
-            if (count >= textflowArr.length) {
-                count = 0;
-            }
-            let textFlow = textflowArr[count];
-
-            // 切换描述内容
-            // Switch to described content
-            textfield.textFlow = textFlow;
-            let tw = egret.Tween.get(textfield);
-            tw.to({ "alpha": 1 }, 200);
-            tw.wait(2000);
-            tw.to({ "alpha": 0 }, 200);
-            tw.call(change, this);
-        };
-
-        change();
+    private onTick(e: egret.Event) {
+        let now = egret.getTimer();
+        let time = this.timeOnEnterFrame;
+        this.deltaTime = now - time;
+        this.timeOnEnterFrame = egret.getTimer();
     }
 }
