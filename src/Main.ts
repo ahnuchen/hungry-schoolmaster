@@ -41,7 +41,7 @@ class Main extends egret.DisplayObjectContainer {
     private hotDogXMin: number;
     private hotDogXMax: number;
     public hotDogYMax: number;//热狗的最大Y轴坐标
-    private maxHotDogCount: number = 3;//热狗的最大数量
+    private maxHotDogCount: number = 10;//热狗的最大数量
     private hotDogCount: number = this.maxHotDogCount;//当前剩余热狗的总数
     private hitHotDogCount: number = 0;//接住了的热狗数量
     private gameStatus: number = 0;//游戏的状态 0 未开始 1 进行中 2 已结束
