@@ -172,11 +172,13 @@ class Main extends egret.DisplayObjectContainer {
         this.bgShp.touchEnabled = false;
         let hotDogTw = egret.Tween.get(this.hotDog, {loop: false});
         let checkPointY = this.schoolMaster.height - 1;
+        let hitted: boolean = false;
         hotDogTw.to({y: checkPointY}, 1500).call(() => {
-            let hitted = this.schoolMaster.hitTestPoint(this.hotDog.x, checkPointY);
+            hitted = this.schoolMaster.hitTestPoint(this.hotDog.x + this.hotDog.width / 2, checkPointY);
             if (hitted) {//接住
                 this.hitHotDogCount++;
                 this.scoreTextField.text = this.hitHotDogCount + "";
+                this.schoolMaster.pause();
                 this.voiceBonus.play(0, 1);
             } else {
                 this.voiceOver.play(0, 1)
@@ -191,7 +193,8 @@ class Main extends egret.DisplayObjectContainer {
                 this.scoreboardImg.y = (this.stage.stageHeight - this.scoreboardImg.scoreBoard.height) / 2;
                 this.scoreboardImg.setCurrentPoint(this.hitHotDogCount);
                 this.gameStatus = 2;
-                this.schoolMaster.pause();
+            } else {
+                this.schoolMaster.resume();
             }
             this.bgShp.touchEnabled = true;
         });

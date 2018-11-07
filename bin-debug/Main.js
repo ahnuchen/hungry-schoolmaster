@@ -81,7 +81,6 @@ var Main = (function (_super) {
         _this.hitHotDogCount = 0; //接住了的热狗数量
         _this.gameStatus = 0; //游戏的状态 0 未开始 1 进行中 2 已结束
         _this.addEventListener(egret.Event.ADDED_TO_STAGE, _this.onAddToStage, _this);
-        _this.addEventListener(egret.Event.ENTER_FRAME, _this.onTick, _this);
         return _this;
     }
     Main.prototype.onAddToStage = function (event) {
@@ -211,12 +210,13 @@ var Main = (function (_super) {
         this.bgShp.touchEnabled = false;
         var hotDogTw = egret.Tween.get(this.hotDog, { loop: false });
         var checkPointY = this.schoolMaster.height - 1;
+        var hitted = false;
         hotDogTw.to({ y: checkPointY }, 1500).call(function () {
-            // let hitted = this.hotDog.hitTestPoint(this.schoolMaster.x + (this.schoolMaster.topPointX - this.schoolMaster.bottomPointX) / 2, this.schoolMaster.height);
-            var hitted = _this.schoolMaster.hitTestPoint(_this.hotDog.x, checkPointY);
+            hitted = _this.schoolMaster.hitTestPoint(_this.hotDog.x + _this.hotDog.width / 2, checkPointY);
             if (hitted) {
                 _this.hitHotDogCount++;
                 _this.scoreTextField.text = _this.hitHotDogCount + "";
+                _this.schoolMaster.pause();
                 _this.voiceBonus.play(0, 1);
             }
             else {
@@ -232,7 +232,9 @@ var Main = (function (_super) {
                 _this.scoreboardImg.y = (_this.stage.stageHeight - _this.scoreboardImg.scoreBoard.height) / 2;
                 _this.scoreboardImg.setCurrentPoint(_this.hitHotDogCount);
                 _this.gameStatus = 2;
-                _this.schoolMaster.pause();
+            }
+            else {
+                _this.schoolMaster.resume();
             }
             _this.bgShp.touchEnabled = true;
         });
@@ -252,12 +254,6 @@ var Main = (function (_super) {
         var result = new egret.Bitmap();
         result.texture = RES.getRes(name);
         return result;
-    };
-    Main.prototype.onTick = function (e) {
-        var now = egret.getTimer();
-        var time = this.timeOnEnterFrame;
-        this.deltaTime = now - time;
-        this.timeOnEnterFrame = egret.getTimer();
     };
     return Main;
 }(egret.DisplayObjectContainer));
