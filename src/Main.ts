@@ -181,12 +181,12 @@ class Main extends egret.DisplayObjectContainer {
                 this.schoolMaster.pause();
                 this.voiceBonus.play(0, 1);
             } else {
-                this.voiceOver.play(0, 1)
+                this.voiceOver.play(0, 1);
                 if (this.hotDogCount <= 0) {
                     this.schoolMaster.pause()
                 }
             }
-        }).to({y: 5}, 200).call(() => {
+        }).to({y: 15}, 200).call(() => {
             egret.Tween.removeTweens(this.hotDog);
             this.hotDog.x = this.getHotDogX();
             this.hotDog.y = this.hotDogYMax;

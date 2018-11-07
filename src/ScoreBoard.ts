@@ -49,7 +49,6 @@ class ScoreBoard extends egret.DisplayObjectContainer {
         shp.addChild(this.currentPointText);
         shp.addChild(this.maxPointText);
 
-        console.log(this.scoreBoard);
         this.currentPointText.y = this.scoreBoard.height / 2.5;
         this.currentPointText.textColor = 0xcc0000;
         this.maxPointText.textColor = 0xcc0000;
