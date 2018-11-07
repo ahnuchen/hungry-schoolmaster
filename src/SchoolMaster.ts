@@ -44,6 +44,6 @@ class SchoolMaster extends egret.DisplayObjectContainer {
         tw.to({x: this.personXMax}, 2000).wait(100)
             .to({x: 0}, 2000).wait(100);
         this.addChild(this.schoolMaster);
-        // this.pause()
+        this.pause()
     }
 }

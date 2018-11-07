@@ -76,16 +76,15 @@ var Main = (function (_super) {
     function Main() {
         var _this = _super.call(this) || this;
         _this.timeOnEnterFrame = 0;
+        _this.maxHotDogCount = 10; //热狗的最大数量
+        _this.hotDogCount = _this.maxHotDogCount; //当前剩余热狗的总数
+        _this.hitHotDogCount = 0; //接住了的热狗数量
+        _this.gameStatus = 0; //游戏的状态 0 未开始 1 进行中 2 已结束
         _this.addEventListener(egret.Event.ADDED_TO_STAGE, _this.onAddToStage, _this);
         _this.addEventListener(egret.Event.ENTER_FRAME, _this.onTick, _this);
         return _this;
     }
     Main.prototype.onAddToStage = function (event) {
-        egret.lifecycle.addLifecycleListener(function (context) {
-            // custom lifecycle plugin
-            context.onUpdate = function () {
-            };
-        });
         egret.lifecycle.onPause = function () {
             egret.ticker.pause();
         };
@@ -100,9 +99,7 @@ var Main = (function (_super) {
         return __awaiter(this, void 0, void 0, function () {
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0:
-                        console.log('runGame');
-                        return [4 /*yield*/, this.loadResource()];
+                    case 0: return [4 /*yield*/, this.loadResource()];
                     case 1:
                         _a.sent();
                         this.createGameScene();
@@ -110,24 +107,6 @@ var Main = (function (_super) {
                 }
             });
         });
-    };
-    Main.prototype.onTouchState = function () {
-        var _this = this;
-        // if (this.schoolMaster.paused) {
-        //     this.schoolMaster.resume()
-        // } else {
-        //     this.schoolMaster.pause()
-        // }
-        // this.voiceOver.play(0, 1)
-        var hotDogTw = egret.Tween.get(this.hotDog, { loop: false });
-        hotDogTw.to({ y: 0 }, 1500).call(function () {
-            console.log('到头了');
-            egret.Tween.removeTweens(_this.hotDog);
-            _this.hotDog.x = _this.getHotDogX();
-            _this.hotDog.y = _this.hotDogYMax;
-            _this.voiceBonus.play(0, 1);
-        });
-        this.voiceOver.play(0, 1);
     };
     Main.prototype.loadResource = function () {
         return __awaiter(this, void 0, void 0, function () {
@@ -147,6 +126,7 @@ var Main = (function (_super) {
                         this.stage.removeChild(loadingView);
                         this.voiceBonus = RES.getRes("point_mp3");
                         this.voiceOver = RES.getRes("die_mp3");
+                        this.voiceLaunch = RES.getRes("launch_mp3");
                         return [3 /*break*/, 4];
                     case 3:
                         e_1 = _a.sent();
@@ -162,27 +142,105 @@ var Main = (function (_super) {
      * Create a game scene
      */
     Main.prototype.createGameScene = function () {
-        var shp = new egret.Shape();
-        shp.graphics.beginFill(0xeceaec, 1);
-        shp.graphics.drawRect(0, 0, this.stage.stageWidth, this.stage.stageHeight);
-        shp.graphics.endFill();
-        shp.touchEnabled = true;
-        shp.addEventListener(egret.TouchEvent.TOUCH_TAP, this.onTouchState, this);
-        this.addChild(shp);
+        this.bgShp = new egret.Shape();
+        this.bgShp.graphics.beginFill(0xeceaec, 1);
+        this.bgShp.graphics.drawRect(0, 0, this.stage.stageWidth, this.stage.stageHeight);
+        this.bgShp.graphics.endFill();
+        this.bgShp.touchEnabled = true;
+        this.bgShp.addEventListener(egret.TouchEvent.TOUCH_TAP, this.onTouchState, this);
+        this.addChild(this.bgShp);
         this.schoolMaster = new SchoolMaster();
         this.addChild(this.schoolMaster);
         this.hotDog = this.createBitmapByName('regou_png');
+        this.addChild(this.hotDog);
         this.hotDogXMin = this.schoolMaster.bottomPointX;
         this.hotDogXMax = this.stage.stageWidth - this.schoolMaster.topPointX - this.hotDog.width;
         this.hotDogYMax = this.stage.stageHeight - this.hotDog.height;
         this.hotDog.x = this.getHotDogX();
         this.hotDog.y = this.hotDogYMax;
-        console.log(this.hotDog);
-        console.log(this.hotDog.x);
-        console.log(this.hotDog.y);
-        this.addChild(this.hotDog);
+        this.textField = new egret.TextField();
+        this.textField.x = 0;
+        this.textField.y = this.stage.stageHeight - 40;
+        this.textField.width = 120;
+        this.textField.height = 40;
+        this.textField.textAlign = "center";
+        this.textField.textColor = 0xcc0000;
+        this.setTextField();
+        this.addChild(this.textField);
+        this.scoreTextField = new egret.TextField();
+        this.scoreTextField.y = 200;
+        this.scoreTextField.x = 315;
+        this.scoreTextField.textColor = 0xcc0000;
+        this.scoreTextField.text = this.hitHotDogCount + "";
+        this.addChild(this.scoreTextField);
+        this.tipImg = this.createBitmapByName('tip_png');
+        this.addChild(this.tipImg);
+        this.tipImg.x = (this.stage.stageWidth - this.tipImg.width) / 2;
+        this.tipImg.y = (this.stage.stageHeight - this.tipImg.height) / 2;
+        this.scoreboardImg = new ScoreBoard();
         this.swapChildren(this.hotDog, this.schoolMaster);
     };
+    Main.prototype.setTextField = function () {
+        this.textField.text = "\u5269\u4F59:" + this.hotDogCount;
+    };
+    // 点击事件
+    Main.prototype.onTouchState = function () {
+        if (this.gameStatus === 0) {
+            this.removeChild(this.tipImg);
+            this.schoolMaster.resume();
+            this.gameStatus = 1;
+        }
+        else if (this.gameStatus === 1) {
+            this.voiceLaunch.play(0, 1);
+            this.hotDogCount--;
+            this.setTextField();
+            this.launchHotDog();
+        }
+        else if (this.gameStatus === 2) {
+            this.removeChild(this.scoreboardImg);
+            this.addChild(this.tipImg);
+            this.gameStatus = 0;
+            this.hotDogCount = this.maxHotDogCount;
+            this.hitHotDogCount = 0;
+            this.scoreTextField.text = this.hitHotDogCount + "";
+            this.setTextField();
+        }
+    };
+    Main.prototype.launchHotDog = function () {
+        var _this = this;
+        this.bgShp.touchEnabled = false;
+        var hotDogTw = egret.Tween.get(this.hotDog, { loop: false });
+        var checkPointY = this.schoolMaster.height - 1;
+        hotDogTw.to({ y: checkPointY }, 1500).call(function () {
+            // let hitted = this.hotDog.hitTestPoint(this.schoolMaster.x + (this.schoolMaster.topPointX - this.schoolMaster.bottomPointX) / 2, this.schoolMaster.height);
+            var hitted = _this.schoolMaster.hitTestPoint(_this.hotDog.x, checkPointY);
+            if (hitted) {
+                _this.hitHotDogCount++;
+                _this.scoreTextField.text = _this.hitHotDogCount + "";
+                _this.voiceBonus.play(0, 1);
+            }
+            else {
+                _this.voiceOver.play(0, 1);
+            }
+        }).to({ y: 5 }, 200).call(function () {
+            egret.Tween.removeTweens(_this.hotDog);
+            _this.hotDog.x = _this.getHotDogX();
+            _this.hotDog.y = _this.hotDogYMax;
+            if (_this.hotDogCount <= 0) {
+                _this.addChild(_this.scoreboardImg);
+                _this.scoreboardImg.x = (_this.stage.stageWidth - _this.scoreboardImg.scoreBoard.width) / 2;
+                _this.scoreboardImg.y = (_this.stage.stageHeight - _this.scoreboardImg.scoreBoard.height) / 2;
+                _this.scoreboardImg.setCurrentPoint(_this.hitHotDogCount);
+                _this.gameStatus = 2;
+                _this.schoolMaster.pause();
+            }
+            _this.bgShp.touchEnabled = true;
+        });
+    };
+    /**
+     * 获取随机的热狗X坐标
+     * @returns {number}
+     */
     Main.prototype.getHotDogX = function () {
         return (this.hotDogXMax - this.hotDogXMin) * Math.random() + this.hotDogXMin;
     };
