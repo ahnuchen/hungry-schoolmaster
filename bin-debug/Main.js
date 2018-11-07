@@ -76,7 +76,7 @@ var Main = (function (_super) {
     function Main() {
         var _this = _super.call(this) || this;
         _this.timeOnEnterFrame = 0;
-        _this.maxHotDogCount = 10; //热狗的最大数量
+        _this.maxHotDogCount = 3; //热狗的最大数量
         _this.hotDogCount = _this.maxHotDogCount; //当前剩余热狗的总数
         _this.hitHotDogCount = 0; //接住了的热狗数量
         _this.gameStatus = 0; //游戏的状态 0 未开始 1 进行中 2 已结束
@@ -221,8 +221,11 @@ var Main = (function (_super) {
             }
             else {
                 _this.voiceOver.play(0, 1);
+                if (_this.hotDogCount <= 0) {
+                    _this.schoolMaster.pause();
+                }
             }
-        }).to({ y: 5 }, 200).call(function () {
+        }).to({ y: 15 }, 200).call(function () {
             egret.Tween.removeTweens(_this.hotDog);
             _this.hotDog.x = _this.getHotDogX();
             _this.hotDog.y = _this.hotDogYMax;
